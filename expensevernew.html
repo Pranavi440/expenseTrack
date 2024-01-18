@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet Watch new</title>
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <style>
+        body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    color: #333;
+    text-align: center;
+}
+
+.expense-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+input, button {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+button,a {
+    background-color: #4caf50;
+    color: #fff;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.transaction-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 15px;
+    text-align: left;
+}
+
+th {
+    background-color: #4caf50;
+    color: #fff;
+}
+.graph-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #expenseChart {
+            width: 100%;
+            height: 400px;
+        }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Wallet Watch</h1>
+
+        <form id="expenseForm" class="expense-form">
+            <label for="amount">Amount:</label>
+            <input type="number" id="amount" required>
+
+            <label for="description">Description:</label>
+            <input type="text" id="description" required>
+
+            <label for="category">Category:</label>
+            <input type="text" id="category" required>
+
+            <label for="date">Date:</label>
+            <input type="date" id="date" required>
+
+            <button type="button" onclick="addTransaction()">Add Transaction</button>
+            
+        </form>
+
+        <h2>Transactions</h2>
+        <table id="transactionTable" class="transaction-table">
+            <thead>
+                <tr>
+                    <th>Amount</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="transactionBody">
+                <!-- Transactions will be displayed here -->
+            </tbody>
+        </table>
+        <div id="totalAmount">Total Amount: ₹0.00</div>
+
+        <div class="graph-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        function addTransaction() {
+    const amount = document.getElementById('amount').value;
+    const description = document.getElementById('description').value;
+    const category = document.getElementById('category').value;
+    const date = document.getElementById('date').value;
+
+    if (!amount || !description || !category || !date) {
+        alert('Please fill in all fields.');
+        return;
+    }
+
+    const transaction = {
+        amount,
+        description,
+        category,
+        date
+    };
+
+    // Retrieve existing transactions from local storage
+    const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    // Add the new transaction
+    transactions.push(transaction);
+
+    // Save the updated transactions to local storage
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+
+    // Refresh the transaction table
+    displayTransactions();
+    displayTotalAmount();
+    showGraph();
+}
+
+function displayTransactions() {
+    const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    const tableBody = document.getElementById('transactionBody');
+
+    // Clear existing rows
+    tableBody.innerHTML = '';
+
+    // Populate the table with transactions
+    transactions.forEach(transaction => {
+        const row = tableBody.insertRow();
+
+        const amountCell = row.insertCell(0);
+        amountCell.textContent = transaction.amount;
+
+        const descriptionCell = row.insertCell(1);
+        descriptionCell.textContent = transaction.description;
+
+        const categoryCell = row.insertCell(2);
+        categoryCell.textContent = transaction.category;
+
+        const dateCell = row.insertCell(3);
+        dateCell.textContent = transaction.date;
+    });
+}
+function displayTotalAmount() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            const totalAmountElement = document.getElementById('totalAmount');
+
+            const totalAmount = transactions.reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
+
+            totalAmountElement.textContent = `Total Amount: ₹${totalAmount.toFixed(2)}`;
+        }
+        function showGraph() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            const dates = transactions.map(transaction => transaction.date);
+            const amounts = transactions.map(transaction => parseFloat(transaction.amount));
+
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Expense Tracker',
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        data: amounts,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'category',
+                            labels: dates,
+                            title: {
+                                display: true,
+                                text: 'Date',
+                            },
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amount',
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+// Initial display of transactions
+displayTransactions();
+displayTotalAmount();
+showGraph();
+
+    </script>
+</body>
+</html>
